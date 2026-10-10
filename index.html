@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BACA SERU - Petualangan Belajar</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #E0F2FE; overflow-x: hidden; user-select: none;}
+        .bounce { animation: bounce 2s infinite; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(0); }
+        }
+        .pop { animation: pop 0.3s ease-out; }
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Komponen Tombol Reusable
+        const Button = ({ onClick, children, color = "bg-blue-500", className = "" }) => (
+            <button 
+                onClick={onClick} 
+                className={`${color} text-white font-bold py-4 px-8 rounded-full shadow-[0_6px_0_rgba(0,0,0,0.2)] active:shadow-[0_0px_0_rgba(0,0,0,0.2)] active:translate-y-[6px] transition-all text-xl ${className}`}
+            >
+                {children}
+            </button>
+        );
+
+        // 1. SPLASH SCREEN
+        const SplashScreen = ({ onStart }) => (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-cyan-300 to-blue-500 text-white p-6 text-center pop">
+                <h1 className="text-6xl font-black mb-4 drop-shadow-lg bounce tracking-wider">BACA SERU!</h1>
+                <p className="text-2xl mb-8 font-bold drop-shadow-md">Ayo Baca, Main, dan Jadi Juara!</p>
+                
+                <div className="bg-white/20 p-6 rounded-3xl backdrop-blur-sm mb-12 max-w-md">
+                    <p className="text-xl leading-relaxed">
+                        "Halo, Petualang Cilik! 🌈<br/>Ayo kita bertualang di dunia huruf dan menjadi juara membaca bersama Bubu!"
+                    </p>
+                </div>
+
+                <Button onClick={onStart} color="bg-yellow-400 text-yellow-900 hover:bg-yellow-300" className="w-full max-w-xs text-2xl">
+                    MULAI PETUALANGAN
+                </Button>
+            </div>
+        );
+
+        // 2. PETA PETUALANGAN
+        const MapScreen = ({ onSelectLevel, unlockedLevel, stars }) => {
+            const worlds = [
+                { id: 1, name: "Taman Huruf", color: "bg-green-400" },
+                { id: 2, name: "Pulau Vokal", color: "bg-teal-400" },
+                { id: 3, name: "Hutan Suku Kata", color: "bg-emerald-500" },
+                { id: 4, name: "Negeri Mengeja", color: "bg-purple-400" }
+            ];
+
+            return (
+                <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-sky-200 p-6 pop">
+                    <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-3xl shadow-md">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center text-2xl">👦</div>
+                            <span className="font-bold text-xl text-gray-700">Pemain 1</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-yellow-100 px-4 py-2 rounded-full border-2 border-yellow-400">
+                            <span className="text-2xl">⭐</span>
+                            <span className="font-black text-xl text-yellow-700">{stars}</span>
+                        </div>
+                    </div>
+
+                    <h2 className="text-3xl font-black text-center text-sky-800 mb-8 drop-shadow-sm">Peta Petualangan</h2>
+
+                    <div className="flex flex-col gap-6 max-w-md mx-auto relative">
+                        {/* Garis penghubung (simulasi rute) */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-4 bg-sky-300 -translate-x-1/2 z-0 rounded-full"></div>
+
+                        {worlds.map((world, index) => {
+                            const isUnlocked = world.id <= unlockedLevel;
+                            return (
+                                <div key={world.id} className={`relative z-10 flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+                                    <button 
+                                        onClick={() => isUnlocked && onSelectLevel(world.id)}
+                                        className={`w-3/4 p-6 rounded-3xl border-4 ${isUnlocked ? 'border-white shadow-xl transform hover:scale-105' : 'border-gray-400 opacity-70'} transition-all ${isUnlocked ? world.color : 'bg-gray-300'}`}
+                                    >
+                                        <div className="text-white font-black text-2xl drop-shadow-md">
+                                            {isUnlocked ? `Dunia ${world.id}` : 'Terkunci 🔒'}
+                                        </div>
+                                        <div className="text-white/90 font-bold mt-1">{world.name}</div>
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. GAME MENGEJA KATA (Fokus MVP)
+        const SpellingGame = ({ onComplete }) => {
+            const word = "BOLA";
+            const [placedLetters, setPlacedLetters] = useState([null, null, null, null]);
+            const [availableLetters, setAvailableLetters] = useState([{id: 1, char: 'O'}, {id: 2, char: 'A'}, {id: 3, char: 'B'}, {id: 4, char: 'L'}]);
+            const [isSuccess, setIsSuccess] = useState(false);
+
+            const handleLetterClick = (letterObj) => {
+                const emptyIndex = placedLetters.findIndex(l => l === null);
+                if (emptyIndex !== -1) {
+                    const newPlaced = [...placedLetters];
+                    newPlaced[emptyIndex] = letterObj;
+                    setPlacedLetters(newPlaced);
+                    
+                    setAvailableLetters(availableLetters.filter(l => l.id !== letterObj.id));
+
+                    // Cek kemenangan
+                    if (emptyIndex === word.length - 1) {
+                        const formedWord = newPlaced.map(l => l.char).join('');
+                        if (formedWord === word) {
+                            setTimeout(() => setIsSuccess(true), 500);
+                        } else {
+                            // Reset jika salah
+                            setTimeout(() => {
+                                setPlacedLetters([null, null, null, null]);
+                                setAvailableLetters([{id: 1, char: 'O'}, {id: 2, char: 'A'}, {id: 3, char: 'B'}, {id: 4, char: 'L'}]);
+                                alert("Ups! Hampir benar, yuk coba lagi!");
+                            }, 500);
+                        }
+                    }
+                }
+            };
+
+            const handleRemoveLetter = (index, letterObj) => {
+                if (!letterObj) return;
+                const newPlaced = [...placedLetters];
+                newPlaced[index] = null;
+                setPlacedLetters(newPlaced);
+                setAvailableLetters([...availableLetters, letterObj]);
+            };
+
+            if (isSuccess) {
+                return (
+                    <div className="min-h-screen bg-green-400 flex flex-col items-center justify-center p-6 text-white pop">
+                        <h1 className="text-6xl font-black mb-8 bounce">HEBAT! 🎉</h1>
+                        <div className="text-8xl mb-8">⚽</div>
+                        <p className="text-3xl font-bold mb-12">Kamu berhasil mengeja BOLA!</p>
+                        <div className="flex gap-4 mb-12">
+                            <span className="text-6xl bounce" style={{animationDelay: '0.1s'}}>⭐</span>
+                            <span className="text-6xl bounce" style={{animationDelay: '0.2s'}}>⭐</span>
+                            <span className="text-6xl bounce" style={{animationDelay: '0.3s'}}>⭐</span>
+                        </div>
+                        <Button onClick={onComplete} color="bg-white text-green-600">
+                            KEMBALI KE PETA
+                        </Button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-purple-500 p-6 flex flex-col pop">
+                    <div className="bg-white rounded-3xl p-6 text-center mb-12 shadow-lg mt-8">
+                        <div className="text-6xl mb-4">⚽</div>
+                        <h2 className="text-2xl font-bold text-gray-700">Ayo susun kata BOLA!</h2>
+                    </div>
+
+                    {/* Tempat Huruf */}
+                    <div className="flex justify-center gap-3 mb-16">
+                        {placedLetters.map((l, i) => (
+                            <div 
+                                key={i} 
+                                onClick={() => handleRemoveLetter(i, l)}
+                                className={`w-16 h-20 md:w-24 md:h-28 rounded-2xl border-4 border-dashed border-white/50 flex items-center justify-center text-4xl md:text-5xl font-black text-purple-600 ${l ? 'bg-white border-solid shadow-lg transform scale-110 transition-all cursor-pointer' : 'bg-purple-400/30'}`}
+                            >
+                                {l ? l.char : ''}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Huruf Tersedia */}
+                    <div className="flex justify-center gap-4 flex-wrap mt-auto mb-12">
+                        {availableLetters.map(l => (
+                            <button 
+                                key={l.id}
+                                onClick={() => handleLetterClick(l)}
+                                className="w-16 h-20 md:w-24 md:h-28 bg-yellow-400 rounded-2xl shadow-[0_6px_0_#A16207] active:shadow-[0_0px_0_#A16207] active:translate-y-[6px] flex items-center justify-center text-4xl md:text-5xl font-black text-yellow-900 transition-all"
+                            >
+                                {l.char}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // KOMPONEN UTAMA (Routing System)
+        const App = () => {
+            const [screen, setScreen] = useState('splash');
+            const [stars, setStars] = useState(0);
+            const [unlockedLevel, setUnlockedLevel] = useState(4); // Set 4 agar bisa test Negeri Mengeja
+
+            const renderScreen = () => {
+                switch(screen) {
+                    case 'splash':
+                        return <SplashScreen onStart={() => setScreen('map')} />;
+                    case 'map':
+                        return <MapScreen onSelectLevel={(level) => {
+                            if (level === 4) setScreen('game');
+                        }} unlockedLevel={unlockedLevel} stars={stars} />;
+                    case 'game':
+                        return <SpellingGame onComplete={() => {
+                            setStars(stars + 3);
+                            setScreen('map');
+                        }} />;
+                    default:
+                        return <SplashScreen onStart={() => setScreen('map')} />;
+                }
+            };
+
+            return (
+                <div className="w-full max-w-md mx-auto bg-white min-h-screen shadow-2xl relative overflow-hidden">
+                    {renderScreen()}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
